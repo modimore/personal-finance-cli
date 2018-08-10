@@ -22,21 +22,20 @@ q_second_parties = db.query(t_second_parties).get()
 q_second_party_aliases = db.query(jn_second_party_to_aliases.left, jn_second_party_to_aliases.right)\
     .get()
 
-q_transactions = db.query(
+qbd_transactions = db.query(
         jn_transactions_account_category.tables[t_transactions.get_name()],
         jn_transactions_account_category.tables[t_accounts.get_name()]["name"].as_("account_name"),
         jn_transactions_account_category.tables[t_categories.get_name()]["name"].as_("category_name")
-    ).order_by(t_transactions.columns["time"], ascending=False).get()
-q_transactions_in_range = db.query(
-        jn_transactions_account_category.tables[t_transactions.get_name()],
-        jn_transactions_account_category.tables[t_accounts.get_name()]["name"].as_("account_name"),
-        jn_transactions_account_category.tables[t_categories.get_name()]["name"].as_("category_name"))\
-    .where(jn_transactions_account_category.tables[t_transactions.get_name()]["time"] >= Value(None, param_name="start"))\
-    .where(jn_transactions_account_category.tables[t_transactions.get_name()]["time"] <= Value(None, param_name="end"))\
-    .order_by(t_transactions.columns["time"], ascending=False).get()
+    ).order_by(t_transactions.columns["time"], ascending=False)
 
-q_transaction_summary = db.query(Sum_(t_transactions.columns["amount"]).as_("total")).get()
-q_transaction_summary_in_range = db.query(Sum_(t_transactions.columns["amount"]).as_("total"))\
+q_transactions = qbd_transactions.get()
+q_transactions_in_range = qbd_transactions.clone()\
+    .where(jn_transactions_account_category.tables[t_transactions.get_name()]["time"] >= Value(None, param_name="start"))\
+    .where(jn_transactions_account_category.tables[t_transactions.get_name()]["time"] <= Value(None, param_name="end")).get()
+
+qbd_transaction_summary = db.query(Sum_(t_transactions.columns["amount"]).as_("total"))
+q_transaction_summary = qbd_transaction_summary.get()
+q_transaction_summary_in_range = qbd_transaction_summary\
     .where(t_transactions.columns["time"] >= Value(None, param_name="start"))\
     .where(t_transactions.columns["time"] <= Value(None, param_name="end"))\
     .get()
